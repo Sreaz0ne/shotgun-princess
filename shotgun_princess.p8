@@ -33,10 +33,10 @@ end
 function _draw()
 	cls(12)
 	map(0,0)
-	print(plyr.dy,plyr.x,plyr.y-16,7)
-	print(plyr.dx,plyr.x,plyr.y-8,7)
+	--print(plyr.cumulated_boost,plyr.x,plyr.y-16,7)
+	--print(plyr.dx,plyr.x,plyr.y-8,7)
 	spr(plyr.sp,plyr.x,plyr.y,1,1,plyr.flip_x)
-	rect(plyr.hitbox.x1,plyr.hitbox.y1,plyr.hitbox.x2,plyr.hitbox.y2,8)
+	--rect(plyr.hitbox.x1,plyr.hitbox.y1,plyr.hitbox.x2,plyr.hitbox.y2,8)
 end
 -->8
 --functions
@@ -181,10 +181,10 @@ function plyr_update()
 		plyr.landed=false
 		plyr.jump_held=true
 		boost=plyr.min_boost
-	elseif plyr.jump_held
-	and not btn(❎) then
-		plyr.jump_held=false
-		plyr.cumulated_boost=0
+	elseif btn(❎)
+	and not plyr.landed
+	and not plyr.jump_held then
+		plyr.flying=true
 	elseif plyr.jump_held
 	and btn(❎)
 	and plyr.cumulated_boost<plyr.max_boost then
@@ -192,9 +192,26 @@ function plyr_update()
 		if plyr.cumulated_boost+boost>plyr.max_boost then
 			boost=plyr.max_boost-plyr.cumulated_boost
 		end
-	elseif not plyr.can_jump
+	end
+	
+	if plyr.jump_held
+	and not btn(❎) then
+		plyr.jump_held=false
+		plyr.cumulated_boost=0
+	elseif not plyr.jump_held
+	and plyr.cumulated_boost>0 then
+		plyr.cumulated_boost=0
+	end
+	
+	if not plyr.can_jump
 	and not btn(❎) then
 		plyr.can_jump=true
+	end
+	
+	if plyr.flying
+	and(not btn(❎)
+	   or plyr.landed) then
+		plyr.flying=false
 	end
 	
 	if boost>0 then
@@ -221,7 +238,11 @@ function plyr_update()
 		plyr.landed=false
 		plyr.jumping=false
 		
-		plyr.dy=limit_speed(plyr.dy,plyr.max_dy)
+		local max_dy=plyr.max_dy
+		if plyr.flying then
+			max_dy=0.6
+		end
+		plyr.dy=limit_speed(plyr.dy,max_dy)
 		
 		if collide_map(plyr,"down",0) then
 			plyr.landed=true
@@ -243,16 +264,21 @@ function plyr_update()
 			local hitbox=get_pos_hitbox_map(plyr,"up")
 			plyr.y=(hitbox.y1+1)*8
 			plyr.dy=gravity
+			--if collide can't boost anymore
+			plyr.cumulated_boost=plyr.max_boost
 		end
 	end
 	
+	local max_dx=plyr.max_dx
+	if (plyr.flying) max_dx=1
+	
 	if plyr.dx<0 then
-		plyr.dx=limit_speed(plyr.dx,plyr.max_dx)
+		plyr.dx=limit_speed(plyr.dx,max_dx)
 		if collide_map(plyr,"left",1) then
 			plyr.dx=0
 		end
 	elseif plyr.dx>0 then
-		plyr.dx=limit_speed(plyr.dx,plyr.max_dx)
+		plyr.dx=limit_speed(plyr.dx,max_dx)
 		if collide_map(plyr,"right",1) then
 			plyr.dx=0
 		end
@@ -282,7 +308,9 @@ function plyr_update()
 end
 
 function plyr_animate()
-	if plyr.jumping then
+	if plyr.flying then
+		plyr.sp=9
+	elseif plyr.jumping then
 		plyr.sp=7
 	elseif plyr.falling then
 		plyr.sp=8
@@ -307,13 +335,13 @@ function plyr_animate()
 	end
 end
 __gfx__
-00000000000969000009690000009690000096900000969000009690000096900a0096a000009690000000000000000000000000000000000000000000000000
-0000000000aaaa0000aaaa00000aaaa0000aaaa0000aaaa0000aaaa0000aaaa000aaaaaa000aaaa0000000000000000000000000000000000000000000000000
-007007000afcfca00afcfca000afcfca00afcfca00afcfca00afcfca00afcfca00afcfca00afcfca000000000000000000000000000000000000000000000000
-000770000affffa00affefa000affffa00affffa00affefa00affffa00afffaa000ffff00a0ffffa000000000000000000000000000000000000000000000000
-000770000a0ee0a00aee455500a0ee0a00a0eea00a00eea00a00ee0a0a0e45550000ee00000eeee0000000000000000000000000000000000000000000000000
-00700700000e45550004f0f0000e455500045550004555000004555000e4fef0000e455500ee4555000000000000000000000000000000000000000000000000
-0000000000e4fef000eeee0000e4fef0004fef0004feef00004fef0000e77e0000e4f7f00e74f7fe000000000000000000000000000000000000000000000000
+00000000000969000009690000009690000096900000969000009690000096900a0096a000096900000000000000000000000000000000000000000000000000
+0000000000aaaa0000aaaa00000aaaa0000aaaa0000aaaa0000aaaa0000aaaa000aaaaaaa0aaaa0a000000000000000000000000000000000000000000000000
+007007000afcfca00afcfca000afcfca00afcfca00afcfca00afcfca00afcfca00afcfca0afcfca0000000000000000000000000000000000000000000000000
+000770000affffa00affefa000affffa00affffa00affefa00affffa00afffaa000ffff000ffff00000000000000000000000000000000000000000000000000
+000770000a0ee0a00aee455500a0ee0a00a0eea00a00eea00a00ee0a0a0e45550000ee0000eeee00000000000000000000000000000000000000000000000000
+00700700000e45550004f0f0000e455500045550004555000004555000e4fef0000e45550ee45550000000000000000000000000000000000000000000000000
+0000000000e4fef000eeee0000e4fef0004fef0004feef00004fef0000e77e0000e4f7f0ee4f7fee000000000000000000000000000000000000000000000000
 0000000000e77e0000e77e000eee77000ee77e000e77ee000ee77e00001010000001010000010100000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
