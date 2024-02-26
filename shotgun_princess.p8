@@ -5,7 +5,7 @@ __lua__
 --by sreaz
 
 function _init()
-	gravity=0.3
+	gravity=0.4
 	friction=0.85
 	
 	cam_x=0
@@ -14,11 +14,13 @@ function _init()
 	map_end=256
 	
 	plyr_init()
+	bullets={}
 end
 
 function _update()
 	plyr_update()
 	plyr_animate()
+	bullets_update()
 	
 	--simple camera
 	cam_x=plyr.x-64+(plyr.w/2)
@@ -33,6 +35,7 @@ end
 function _draw()
 	cls(12)
 	map(0,0)
+	bullets_draw()
 	--print(plyr.cumulated_boost,plyr.x,plyr.y-16,7)
 	--print(plyr.dx,plyr.x,plyr.y-8,7)
 	spr(plyr.sp,plyr.x,plyr.y,1,1,plyr.flip_x)
@@ -171,7 +174,7 @@ function plyr_update()
 		plyr.running=true
 		plyr.flip_x=false
 	end
-		
+	
 	--jump
 	local boost=0
 	if btn(❎)
@@ -188,7 +191,7 @@ function plyr_update()
 	elseif plyr.jump_held
 	and btn(❎)
 	and plyr.cumulated_boost<plyr.max_boost then
-		boost+=0.5
+		boost+=1
 		if plyr.cumulated_boost+boost>plyr.max_boost then
 			boost=plyr.max_boost-plyr.cumulated_boost
 		end
@@ -217,6 +220,30 @@ function plyr_update()
 	if boost>0 then
 		plyr.cumulated_boost+=boost
 		plyr.dy-=boost
+	end
+	
+	--shoot
+	if btnp(🅾️) then
+		for i=1,3 do
+			local x=plyr.x
+			local y=plyr.y+2
+			local dy=0
+			local dx=4
+			if plyr.flip_x then
+				x+=(flr(rnd(3))+1)
+				dx*=-1
+			else
+				x+=5+(flr(rnd(3))+1)
+			end
+			y+=i
+			local b={
+				x=x,
+				y=y,
+				dx=dx,
+				dy=dy
+			}
+			add(bullets,b)
+		end
 	end
 	
 	--physics
@@ -334,12 +361,27 @@ function plyr_animate()
 		end
 	end
 end
+-->8
+--bullets
+
+function bullets_update()
+	for b in all(bullets) do
+		b.x+=b.dx
+		b.y+=b.dy
+	end
+end
+
+function bullets_draw()
+	for b in all(bullets) do
+		pset(b.x,b.y,5)
+	end
+end
 __gfx__
 00000000000969000009690000009690000096900000969000009690000096900a0096a000096900000000000000000000000000000000000000000000000000
-0000000000aaaa0000aaaa00000aaaa0000aaaa0000aaaa0000aaaa0000aaaa000aaaaaaa0aaaa0a000000000000000000000000000000000000000000000000
+0000000000aaaa0000aaaa00000aaaa0000aaaa0000aaaa0000aaaa0000aaaa000aaaaaa00aaaa00000000000000000000000000000000000000000000000000
 007007000afcfca00afcfca000afcfca00afcfca00afcfca00afcfca00afcfca00afcfca0afcfca0000000000000000000000000000000000000000000000000
-000770000affffa00affefa000affffa00affffa00affefa00affffa00afffaa000ffff000ffff00000000000000000000000000000000000000000000000000
-000770000a0ee0a00aee455500a0ee0a00a0eea00a00eea00a00ee0a0a0e45550000ee0000eeee00000000000000000000000000000000000000000000000000
+000770000affffa00affefa000affffa00affffa00affefa00affffa00afffaa000ffff00affffa0000000000000000000000000000000000000000000000000
+000770000a0ee0a00aee455500a0ee0a00a0eea00a00eea00a00ee0a0a0e45550000ee00a0eeee0a000000000000000000000000000000000000000000000000
 00700700000e45550004f0f0000e455500045550004555000004555000e4fef0000e45550ee45550000000000000000000000000000000000000000000000000
 0000000000e4fef000eeee0000e4fef0004fef0004feef00004fef0000e77e0000e4f7f0ee4f7fee000000000000000000000000000000000000000000000000
 0000000000e77e0000e77e000eee77000ee77e000e77ee000ee77e00001010000001010000010100000000000000000000000000000000000000000000000000
